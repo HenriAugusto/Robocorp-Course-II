@@ -63,13 +63,20 @@ Process a Single Order
     Input Text    id:address    ${address}
 
     Click Button    id:preview
-    Click Button    id:order
 
-    ${AAAA}=    Run Keyword And Return Status    Element Should Be Visible    css:[role='alert']
-    Log    ${AAAA}
+    ${orderSuccess}=    SetVariable    ${False}
+    WHILE    ${orderSuccess} == ${False}
+        ${orderSuccess}=    Try submitting
+    END
 
+    Log    Sucess! orderSuccess = ${OrderSuccess}
     Click Button    id:order-another
     Click Button    OK
+
+Try submitting
+    Click Button    id:order
+    ${found}=    Run Keyword And Return Status    Element Should Be Visible    id:order-another
+    [Return]    ${found}
 
 Number To Part Name
     [Arguments]    ${orderNumber}
