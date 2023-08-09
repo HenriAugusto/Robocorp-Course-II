@@ -11,6 +11,7 @@ Library    RPA.Tables
 Library    Collections
 Library    RPA.PDF
 Library    RPA.FileSystem
+Library    RPA.Archive
 
 *** Variables ***
 ${ordersFile}    ${OUTPUT_dir}${/}orders.csv
@@ -18,6 +19,7 @@ ${ordersPageURL}    https://robotsparebinindustries.com/#/robot-order
 ${ordersCSVURL}    https://robotsparebinindustries.com/orders.csv
 ${robotScreenshotPath}    ${OUTPUT_dir}${/}robot.png
 ${pdfsFolder}    ${CURDIR}${/}PDFs${/}
+${zipPath}    ${OUTPUT_dir}${/}PDF receipts.zip
 
 *** Tasks ***
 Order robots from RobotSpareBin Industries Inc
@@ -27,6 +29,7 @@ Order robots from RobotSpareBin Industries Inc
     ${orders}=    Read Orders    ${ordersFile}
     Open the robot order website
     Process All Orders    ${orders}
+    Zip all Receipts
     Log    ${orders}
 
 *** Keywords ***
@@ -74,6 +77,9 @@ Process a Single Order
 
     Click Button    id:order-another
     Click Button    OK
+
+Zip all Receipts
+    Archive Folder With Zip    ${pdfsFolder}    ${zipPath}
 
 Create PDF Receipt
     [Arguments]    ${orderNumber}
