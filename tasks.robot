@@ -9,15 +9,20 @@ Library    RPA.HTTP
 Library    RPA.Excel.Files
 Library    RPA.Tables
 Library    Collections
+Library    RPA.PDF
+Library    RPA.FileSystem
 
 *** Variables ***
 ${ordersFile}    ${OUTPUT_dir}${/}orders.csv
 ${ordersPageURL}    https://robotsparebinindustries.com/#/robot-order
 ${ordersCSVURL}    https://robotsparebinindustries.com/orders.csv
+${robotScreenshotPath}    ${OUTPUT_dir}${/}robot.png
+${pdfsFolder}    ${CURDIR}${/}PDFs${/}
 
 *** Tasks ***
 Order robots from RobotSpareBin Industries Inc
     Log    Initializing
+    Empty Directory    ${pdfsFolder}
     Download CSV
     ${orders}=    Read Orders    ${ordersFile}
     Open the robot order website
@@ -64,14 +69,28 @@ Process a Single Order
 
     Click Button    id:preview
 
+    Submit Order
+    Create PDF Receipt    ${orderNumber}
+
+    Click Button    id:order-another
+    Click Button    OK
+
+Create PDF Receipt
+    [Arguments]    ${orderNumber}
+    ${receiptHTML}=    Get Element Attribute    id:receipt    innerHTML
+    Capture Element Screenshot    id:robot-preview-image    ${robotScreenshotPath}
+
+    ${currPDF}=    SetVariable    ${pdfsFolder}order ${orderNumber}.pdf
+    HTML to PDF    ${receiptHTML}    ${currPDF}
+    ${files}=    Create List   ${robotScreenshotPath}
+    Add Files To Pdf    ${files}    ${currPDF}    1
+
+
+Submit Order
     ${orderSuccess}=    SetVariable    ${False}
     WHILE    ${orderSuccess} == ${False}
         ${orderSuccess}=    Try submitting
     END
-
-    Log    Sucess! orderSuccess = ${OrderSuccess}
-    Click Button    id:order-another
-    Click Button    OK
 
 Try submitting
     Click Button    id:order
