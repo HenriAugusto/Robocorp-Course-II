@@ -9,19 +9,27 @@ Library    RPA.HTTP
 Library    RPA.Excel.Files
 Library    RPA.Tables
 Library    Collections
+Library    RPA.PDF
+Library    RPA.FileSystem
+Library    RPA.Archive
 
 *** Variables ***
 ${ordersFile}    ${OUTPUT_dir}${/}orders.csv
 ${ordersPageURL}    https://robotsparebinindustries.com/#/robot-order
 ${ordersCSVURL}    https://robotsparebinindustries.com/orders.csv
+${robotScreenshotPath}    ${OUTPUT_dir}${/}robot.png
+${pdfsFolder}    ${CURDIR}${/}PDFs${/}
+${zipPath}    ${OUTPUT_dir}${/}PDF receipts.zip
 
 *** Tasks ***
 Order robots from RobotSpareBin Industries Inc
     Log    Initializing
+    Empty Directory    ${pdfsFolder}
     Download CSV
     ${orders}=    Read Orders    ${ordersFile}
     Open the robot order website
     Process All Orders    ${orders}
+    Zip all Receipts
     Log    ${orders}
 
 *** Keywords ***
@@ -63,13 +71,37 @@ Process a Single Order
     Input Text    id:address    ${address}
 
     Click Button    id:preview
-    Click Button    id:order
 
-    ${AAAA}=    Run Keyword And Return Status    Element Should Be Visible    css:[role='alert']
-    Log    ${AAAA}
+    Submit Order
+    Create PDF Receipt    ${orderNumber}
 
     Click Button    id:order-another
     Click Button    OK
+
+Zip all Receipts
+    Archive Folder With Zip    ${pdfsFolder}    ${zipPath}
+
+Create PDF Receipt
+    [Arguments]    ${orderNumber}
+    ${receiptHTML}=    Get Element Attribute    id:receipt    innerHTML
+    Capture Element Screenshot    id:robot-preview-image    ${robotScreenshotPath}
+
+    ${currPDF}=    SetVariable    ${pdfsFolder}order ${orderNumber}.pdf
+    HTML to PDF    ${receiptHTML}    ${currPDF}
+    ${files}=    Create List   ${robotScreenshotPath}
+    Add Files To Pdf    ${files}    ${currPDF}    1
+
+
+Submit Order
+    ${orderSuccess}=    SetVariable    ${False}
+    WHILE    ${orderSuccess} == ${False}
+        ${orderSuccess}=    Try submitting
+    END
+
+Try submitting
+    Click Button    id:order
+    ${found}=    Run Keyword And Return Status    Element Should Be Visible    id:order-another
+    [Return]    ${found}
 
 Number To Part Name
     [Arguments]    ${orderNumber}
